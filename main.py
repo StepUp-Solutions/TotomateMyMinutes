@@ -4,11 +4,12 @@ import subprocess
 import sys
 import time
 import threading
-import whisperx
+
 import gc
 import os
-from pyannote.audio import Pipeline
+from faster_whisper import WhisperModel
 import torch
+import pyperclip
 
 def launch_obs():
     """
@@ -114,101 +115,89 @@ def transcribe_audio(audio_file, device="cuda", compute_type="float16", batch_si
         return NULL
     else:
         # Load the Whisper model
-        # model = whisperx.load_model("distil-large-v2", device, compute_type=compute_type)
-        model = whisperx.load_model("tiny.en", device, compute_type=compute_type)
+        model_size = "distil-large-v2"
+        model_size = "tiny.en"
         # Load audio
-        audio = whisperx.load_audio(audio_file)
+        # Initialize the Whisper model with specified settings
+        model = WhisperModel(model_size, device="cuda", compute_type="float16")
+        # Perform transcription
+        segments, info = model.transcribe(audio_file, beam_size=5,  condition_on_previous_text=False, vad_filter=True)
         print("Starting Transcribing")
+        print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
         # Transcribe audio
-        result = model.transcribe(audio, batch_size=batch_size)
-        print(result["segments"])  # Print segments before alignment
 
-        # Clean up model if needed
-        # delete model if low on GPU resources
+        # Saving the transcription to a file
+        output_file_path = audio_file.rsplit('.', 1)[0] + ".txt"
+
+        full_transcript =[]
+
+        # Write the transcription data to the file and calculate speaker times
+        with open(output_file_path, 'w') as file:
+            for segment in segments:
+                # transcript_line = "[%.2fs -> %.2fs] %s\n" % (segment.start, segment.end, segment.text)
+                transcript_line = "%s\n" % (segment.text)
+                full_transcript.append(transcript_line)
+                # print(transcript_line, end='')
+                file.write(transcript_line)
+
+        full_transcript ="".join(full_transcript)
+        print(full_transcript)
         gc.collect()
         torch.cuda.empty_cache()
         del model
         print("Cleaning Done")
-        # # Load alignment model
-        # model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
-
-        # # Align output
-        # result = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
-        # print(result["segments"])  # Print segments after alignment
-
-        # Clean up alignment model if needed
-
-        # gc.collect()
-        # torch.cuda.empty_cache()
-        # del model_a
-
-        pipeline = Pipeline.from_pretrained(
-            "pyannote/speaker-diarization-3.1",
-            use_auth_token="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")
-
-        # send pipeline to GPU (when available)
-        # pipeline.to(torch.device("cuda"))
-
-        from pyannote.audio.pipelines.utils.hook import ProgressHook
-        with ProgressHook() as hook:
-            diarization = pipeline(audio_file, hook=hook, min_speakers=2, max_speakers=5)
-
-        # print the result
-        for turn, _, speaker in diarization.itertracks(yield_label=True):
-            print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker_{speaker}")
-        # Perform diarization
-        # diarize_model = whisperx.DiarizationPipeline(use_auth_token="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", device=device)
-
-        # # Assign speaker labels
-        # diarize_segments = diarize_model(audio)
-        # result = whisperx.assign_word_speakers(diarize_segments, result)
-        # print(diarize_segments)
-        # print(result["segments"])  # Print segments with assigned speaker IDs
-
-        # Saving the transcription to a file
-        output_file_path = audio_file.rsplit('.', 1)[0] + ".txt"
-    # Dictionary to hold total speaking time for each speaker
-        speaker_times = {}
-
-        # Write the transcription data to the file and calculate speaker times
-        with open(output_file_path, 'w') as file:
-            for segment in result["segments"]:
-                speaker = segment.get("speaker", "Unknown")
-                start = segment["start"]
-                end = segment["end"]
-                text = segment["text"]
-                duration = end - start
-
-                # Update the total speaking time for the speaker
-                if speaker in speaker_times:
-                    speaker_times[speaker] += duration
-                else:
-                    speaker_times[speaker] = duration
-
-                # Write the segment to the file
-                line = f"[Speaker {speaker}: {start:.2f}s -> {end:.2f}s] {text}\n"
-                file.write(line)
-
-            # Append the total speaking times for each speaker at the end of the file
-            file.write("\nSpeaker Summary:\n")
-            for speaker, total_time in speaker_times.items():
-                file.write(f"{speaker}: {total_time:.2f} seconds\n")
-        
         print(f"Transcription saved to {output_file_path}")
-        return output_file_path
+        return output_file_path, full_transcript
 
+
+def write_prompt(full_transcript):
+    # List of predefined prompts with names for easy selection
+    prompts = [
+        ("Weekly Meeting", "Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, therefore, there may be mistakes, account for it in your minutes. The context is a tech company, with the minutes from its main meeting. The normal structure for the meeting is as follow, keep it for writing the minutes.\nHR \nBusiness Devt.\n- Horses \n- Health\nTechnical\n- Mechanical/Design\n- Electronics\n- Data processing & Algorithms\n- Embedded\n- Apps"),
+        ("Data Meeting", "Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a daily meeting between engineers working on a biomedial signal and data processing. Follow the meeting as per those points: \nWhat was achieved: \n What was clarified, mentioned or solved during the meeting: \nWhat's next to be done"),
+        ("Elec Meeting", "Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a daily meeting between engineers working on a biomedial electronic engineering development. Follow the meeting as per those points: \nWhat was achieved: \n What was clarified, mentioned or solved during the meeting: \nWhat's next to be done")
+    ]
+
+    # Prompt user to select a prompt number or enter '0' for custom
+    print("Select a prompt number or enter '0' for a custom prompt:")
+    for index, (name, desc) in enumerate(prompts, start=1):
+        print(f"{index}. {name}")  # Display the name for easy identification
+
+    selection = input("Your choice: ")
+    if selection == '0':
+        custom_prompt = input("Enter your custom prompt: ")
+        selected_prompt = custom_prompt
+    elif selection.isdigit() and 1 <= int(selection) <= len(prompts):
+        selected_prompt = prompts[int(selection) - 1][1]  # Select the corresponding prompt text
+    else:
+        print("Invalid selection. Using default prompt.")
+        selected_prompt = prompts[0][1]  # Use the first prompt as a default
+
+    # Combine the selected or custom prompt with the transcript
+    prompt_full = selected_prompt + "\n\nSTART OF TRANSCRIPT:\n" + full_transcript
+    return prompt_full
 
     
 def main():
     global recording
     recording = True
 
-    transcribe_audio(r"C:/_Videos/2024-04-29 10-18-11.mp3")
+    print("Welcome to TotomateMyMinutes")
+
+    # data = transcribe_audio(r"C:/_Videos/2024-06-07 14-43-51.mkv")
+    # transcript_path, full_transcript = data
+    # print(transcript_path)
+    # print(full_transcript)
+    # prompt = write_prompt(full_transcript)
+    # print(prompt)
+    # # Copy the full prompt to the clipboard
+    # pyperclip.copy(prompt)
+    # print("Prompt has been copied to the clipboard.")
     
-    input("")
+    # input("")
     
     obs_process = launch_obs()
-    time.sleep(10)  # Allow OBS to launch completely
+    time.sleep(8)  # Allow OBS to launch completely
     client = connect_obs()
     start_recording(client)
 
@@ -221,10 +210,18 @@ def main():
     timer_thread.join()
 
     recording_path = stop_recording(client)
+    # close_obs(client) #Not supported at the moment
     client.disconnect()
-    close_obs(client)
+
     print("Disconnected from OBS and exiting.")
-    transcript_path = transcribe_audio(recording_path)
+    transcript_path, full_transcript = transcribe_audio(recording_path)
+    prompt = write_prompt(full_transcript)
+    print(prompt)
+    # Copy the full prompt to the clipboard
+    pyperclip.copy(prompt)
+    print("Prompt has been copied to the clipboard.")
+
+    
 
 
 if __name__ == "__main__":
