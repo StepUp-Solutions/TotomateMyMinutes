@@ -26,7 +26,7 @@ import pyperclip
 #%%
 
 #Set your OBS websocket password
-obs_password = "AXoKSDc4X2k57wQc"
+obs_password = "your_password"
 #Choose the transcription model. Recommended: distil-large-v2
 model_size = 'distil-medium.en' #"distil-large-v2" #"tiny.en"
 
@@ -43,28 +43,13 @@ meeting_context = [
 **Recorder:** Automated
 HR 
 Business Devt.
-- Horses 
-- Health
 Technical
 - Mechanical/Design
-- Electronics
-- Data processing & Algorithms
-- Embedded
 - Apps"""
     ),
     (
         "Data Meeting",
         """Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a daily meeting between engineers working on a biomedial signal and data processing. Follow the meeting as per those points: 
-**Title:** Weekly Meeting
-**Date and Time:** [Leave Blank if Unknown]
-**Attendees:** [Leave Blank if Unknown]
-What was achieved: 
-What was clarified, mentioned or solved during the meeting: 
-What's next to be done"""
-    ),
-    (
-        "Elec Meeting",
-        """Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a daily meeting between engineers working on a biomedial electronic engineering development. Follow the meeting as per those points: 
 **Title:** Weekly Meeting
 **Date and Time:** [Leave Blank if Unknown]
 **Attendees:** [Leave Blank if Unknown]
