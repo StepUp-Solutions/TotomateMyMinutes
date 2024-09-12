@@ -17,16 +17,31 @@ This project is your ultimate meeting minute generator for effortlessly taking n
    - Press `Enter` when the meeting concludes.
 
 3. **Transcribe and Contextualize:**
-   - Once transcribed, select the context of the meeting.
+   - Once transcribed, select the context of the meeting or enter a custom one
    - Paste (`Ctrl+V`) the content of the clipboard into ChatGPT, [Open WebUI](https://github.com/open-webui/open-webui), or your favorite chat AI (ChatGPT 4o or better recommended).
 
 ## Settings
 
-### Model for Transcribing
+### Model for Transcribing `model_size`
 - **Examples:** `tiny.en`, `medium`, `distil-large-v2`, `faster-distil-medium.en`, `large-v3`,... check distil- and Whisper model for a full list.
 
-### Context for Different Meetings
-- Customize the context to fit various meeting types.
+### Context for Different Meetings `meeting_context`
+- Customize the context to fit various meeting types. Append or edit.
+- **Example:**
+    ```python
+    (
+    "Project Kickoff Meeting",
+    """Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a project kickoff meeting for a new software development project. Follow the meeting as per those points:
+    **Title:** Weekly Meeting
+    **Date and Time:** [Leave Blank if Unknown]
+    **Attendees:** [Leave Blank if Unknown]
+    - Project Overview
+    - Team Roles and Responsibilities
+    - Key Milestones
+    - Risks and Mitigation Strategies
+    - Next Steps"""
+    ),
+    ```
 
 ## Principle
 
@@ -54,13 +69,23 @@ This project is your ultimate meeting minute generator for effortlessly taking n
   - On **Linux/Mac**: Run `source .venv/bin/activate`.
 
 ### Install Faster-Whisper
-- Follow the instructions on [Faster-Whisper GitHub](https://github.com/SYSTRAN/faster-whisper) to install it.
-- **(Windows) Update PATH Environment Variables:**
-  - Open Environment Variables for the system.
-  - Edit the `PATH` variable.
-  - You should see an entry like `C:\Program Files\NVIDIA\CUDNN\vx.x\bin`.
-  - Copy this entry and add another one with the updated version, e.g., `C:\Program Files\NVIDIA\CUDNN\vx.x\bin\12.x`, where `12.x` is the version you just installed. You can open the folder to verify the correct version.
-  - Reboot your system (or refresh your PATH environment variables).
+
+- **Without CUDA:**
+  - Simply run `pip install faster-whisper`.
+
+- **With CUDA (NVidia Acceleration - Recommended if Possible):**
+  - **Step 1: Install cuDNN**
+    - Visit [NVIDIA cuDNN Archive](https://developer.nvidia.com/rdp/cudnn-archive) and download cuDNN v8.9.7.
+    - Extract the contents of the `/bin` folder to your cloned repository.
+
+  - **Step 2: Install CUDA**
+    - Download the latest 12.x version of CUDA from [NVIDIA CUDA Downloads](https://developer.nvidia.com/cuda-downloads).
+
+  - **Step 3: Reboot or Refresh PATH**
+    - Reboot your system (or refresh your PATH environment variables).
+
+  - **Additional Notes**
+    - For updated instructions, refer to the [Faster-Whisper GitHub](https://github.com/SYSTRAN/faster-whisper).
 
 ### Python Compatibility
 - Should be compatible with Python 3.8+.
