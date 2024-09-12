@@ -1,0 +1,5 @@
+obs-websocket-py
+keyboard
+torch
+faster-whisper
+pyperclip
