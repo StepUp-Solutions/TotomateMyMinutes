@@ -25,8 +25,10 @@ import pyperclip
 
 #%%
 
+#Set your OBS websocket password
+obs_password = "AXoKSDc4X2k57wQc"
 #Choose the transcription model. Recommended: distil-large-v2
-model_size = 'tiny.en' #"distil-large-v2" #"tiny.en"
+model_size = 'distil-medium.en' #"distil-large-v2" #"tiny.en"
 
 #Edit or add your own context and minbute structure
 meeting_context = [
@@ -153,7 +155,7 @@ def connect_obs():
     Returns the connected OBS client object.
     """
     try:
-        client = obsws("localhost", 4455, "AXoKSDc4X2k57wQc")
+        client = obsws("localhost", 4455, obs_password)
         client.connect()
         print("Connected to OBS.")
         print(client.call(requests.GetVersion()).getObsVersion())
@@ -317,6 +319,7 @@ def main():
 
     print("Welcome to TotomateMyMinutes")
     modify_path_with_cuda()
+    
     # For testing on a previously recorded file
 
     data = transcribe_audio(r"C:/_Videos/2024-06-07 14-43-51.mkv")

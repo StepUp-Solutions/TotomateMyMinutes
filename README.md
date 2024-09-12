@@ -22,8 +22,10 @@ This project is your ultimate meeting minute generator for effortlessly taking n
 
 ## Settings
 
+Edit main.py directly
+
 ### Model for Transcribing `model_size`
-- **Examples:** `tiny.en`, `medium`, `distil-large-v2`, `faster-distil-medium.en`, `large-v3`,... check distil- and Whisper model for a full list.
+- **Examples:** `tiny.en, tiny, base.en, base, small.en, small, medium.en, medium, large-v1, large-v2, large-v3, large, distil-large-v2, distil-medium.en, distil-small.en, distil-large-v3`
 
 ### Context for Different Meetings `meeting_context`
 - Customize the context to fit various meeting types. Append or edit.
@@ -113,8 +115,46 @@ This project is your ultimate meeting minute generator for effortlessly taking n
 
 ![OBS Config 2](img/obs2.png)
 
+### 3. **Add Audio Sources and Configure WebSocket**
+
+#### Add Audio Sources
+- In `Sources`, press `+` and add:
+  - `Audio Input Capture` - Leave on Default.
+  - `Audio Output Capture` - Same.
+
+![OBS Config 2](img/obs2.png)
+
+### 4. **Enable WebSocket**
+- **Step 1: Open WebSocket Server Settings**
+  - Go to `Tools` -> `WebSocket Server Settings`.
+
+- **Step 2: Enable WebSocket Server**
+  - Check the box to `Enable WebSocket Server`.
+
+- **Step 3: Generate and Copy Password**
+  - Click `Generate Password` and copy the generated password.
+
+- **Step 4: Save Settings**
+  - Click `OK` to save the settings.
+
+- **Step 5: Update main.py**
+  - Open `main.py` and change the `obs_password` variable to your generated password:
+    ```python
+    obs_password = "your_password"
+    ```
+![OBS Config 3](img/obs2.png)
+
 ### Install Dependencies
 - Run `pip install -r requirements.txt`.
+
+### (Windows) Error on first launch
+- You may face the following error on first launch with a new transcription model:
+
+`OSError: [WinError 1314] A required privilege is not held by the client:`
+
+Just relaunch the script and it'll work. 
+
+To reprocess an existing recording, look for the line `# For testing on a previously recorded file`
 
 ### (Optional) Create a shortcut
     - (Windows) Right-click on the script "Send To" -> "Desktop (create shortcut)"
