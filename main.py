@@ -7,9 +7,49 @@ import threading
 
 import gc
 import os
-from faster_whisper import WhisperModel
+from faster_whisper import WhisperModel#, BatchedInferencePipeline
 import torch
 import pyperclip
+
+#%%
+
+#Choose the transcription model. Recommended: distil-large-v2
+model_size = "distil-large-v2" #"tiny.en"
+
+#Edit or add your own context and minbute structure
+meeting_context = [
+    (
+        "Weekly Meeting",
+        """Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, therefore, there may be mistakes, account for it in your minutes. The context is a tech company, with the minutes from its main meeting. The normal structure for the meeting is as follow, keep it for writing the minutes.
+HR 
+Business Devt.
+- Horses 
+- Health
+Technical
+- Mechanical/Design
+- Electronics
+- Data processing & Algorithms
+- Embedded
+- Apps"""
+    ),
+    (
+        "Data Meeting",
+        """Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a daily meeting between engineers working on a biomedial signal and data processing. Follow the meeting as per those points: 
+What was achieved: 
+What was clarified, mentioned or solved during the meeting: 
+What's next to be done"""
+    ),
+    (
+        "Elec Meeting",
+        """Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a daily meeting between engineers working on a biomedial electronic engineering development. Follow the meeting as per those points: 
+What was achieved: 
+What was clarified, mentioned or solved during the meeting: 
+What's next to be done"""
+    )
+]
+
+
+#%%
 
 def launch_obs():
     """
@@ -114,14 +154,12 @@ def transcribe_audio(audio_file, device="cuda", compute_type="float16", batch_si
         print("The specified audio file does not exist: ", audio_file)
         return NULL
     else:
-        # Load the Whisper model
-        model_size = "distil-large-v2"
-        model_size = "tiny.en"
-        # Load audio
+
         # Initialize the Whisper model with specified settings
         model = WhisperModel(model_size, device="cuda", compute_type="float16")
+        # batched_model = BatchedInferencePipeline(model=model)
         # Perform transcription
-        segments, info = model.transcribe(audio_file, beam_size=5,  condition_on_previous_text=False, vad_filter=True)
+        segments, info = model.transcribe(audio_file,beam_size=5,  condition_on_previous_text=False, vad_filter=True)# batch_size=16)#, 
         print("Starting Transcribing")
         print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
         # Transcribe audio
@@ -151,27 +189,23 @@ def transcribe_audio(audio_file, device="cuda", compute_type="float16", batch_si
 
 
 def write_prompt(full_transcript):
-    # List of predefined prompts with names for easy selection
-    prompts = [
-        ("Weekly Meeting", "Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, therefore, there may be mistakes, account for it in your minutes. The context is a tech company, with the minutes from its main meeting. The normal structure for the meeting is as follow, keep it for writing the minutes.\nHR \nBusiness Devt.\n- Horses \n- Health\nTechnical\n- Mechanical/Design\n- Electronics\n- Data processing & Algorithms\n- Embedded\n- Apps"),
-        ("Data Meeting", "Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a daily meeting between engineers working on a biomedial signal and data processing. Follow the meeting as per those points: \nWhat was achieved: \n What was clarified, mentioned or solved during the meeting: \nWhat's next to be done"),
-        ("Elec Meeting", "Write the minutes for the transcript. The speakers are not written down. The transcript was automatic, account for potential mistakes in your minutes. The context is a daily meeting between engineers working on a biomedial electronic engineering development. Follow the meeting as per those points: \nWhat was achieved: \n What was clarified, mentioned or solved during the meeting: \nWhat's next to be done")
-    ]
+    # List of predefined meeting_context with names for easy selection
+
 
     # Prompt user to select a prompt number or enter '0' for custom
     print("Select a prompt number or enter '0' for a custom prompt:")
-    for index, (name, desc) in enumerate(prompts, start=1):
+    for index, (name, desc) in enumerate(meeting_context, start=1):
         print(f"{index}. {name}")  # Display the name for easy identification
 
     selection = input("Your choice: ")
     if selection == '0':
         custom_prompt = input("Enter your custom prompt: ")
         selected_prompt = custom_prompt
-    elif selection.isdigit() and 1 <= int(selection) <= len(prompts):
-        selected_prompt = prompts[int(selection) - 1][1]  # Select the corresponding prompt text
+    elif selection.isdigit() and 1 <= int(selection) <= len(meeting_context):
+        selected_prompt = meeting_context[int(selection) - 1][1]  # Select the corresponding prompt text
     else:
         print("Invalid selection. Using default prompt.")
-        selected_prompt = prompts[0][1]  # Use the first prompt as a default
+        selected_prompt = meeting_context[0][1]  # Use the first prompt as a default
 
     # Combine the selected or custom prompt with the transcript
     prompt_full = selected_prompt + "\n\nSTART OF TRANSCRIPT:\n" + full_transcript
@@ -197,7 +231,7 @@ def main():
     # input("")
     
     obs_process = launch_obs()
-    time.sleep(8)  # Allow OBS to launch completely
+    time.sleep(13)  # Allow OBS to launch completely
     client = connect_obs()
     start_recording(client)
 
