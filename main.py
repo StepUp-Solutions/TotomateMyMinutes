@@ -307,17 +307,17 @@ def main():
     
     # For testing on a previously recorded file
 
-    data = transcribe_audio(r"C:/_Videos/2024-06-07 14-43-51.mkv")
-    transcript_path, full_transcript = data
-    print(transcript_path)
-    print(full_transcript)
-    prompt = write_prompt(full_transcript)
-    print(prompt)
+    #data = transcribe_audio(r"C:/_Videos/2024-06-07 14-43-51.mkv")
+    #transcript_path, full_transcript = data
+    #print(transcript_path)
+   # print(full_transcript)
+    #prompt = write_prompt(full_transcript)
+    #print(prompt)
     # Copy the full prompt to the clipboard
-    pyperclip.copy(prompt)
-    print("Prompt has been copied to the clipboard.")
+   # pyperclip.copy(prompt)
+   # print("Prompt has been copied to the clipboard.")
     
-    input("")
+   # input("")
     
     obs_process = launch_obs()
     time.sleep(13)  # Allow OBS to launch completely
